@@ -4,12 +4,16 @@ import Home from "./pages/Home";
 import Jobs from "./pages/Jobs";
 import JobDetailsPage from "./pages/JobDetailsPage";
 
+
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import AddJob from "./pages/AddJob";
 import EditJob from "./pages/EditJob";
 import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
+import Companies from "./pages/Companies";
+import Categories from "./pages/Categories";
+import About from "./pages/About";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -31,6 +35,20 @@ function App() {
         <Route
           path="/jobs/:id"
           element={<JobDetailsPage />}
+        />
+                <Route
+          path="/companies"
+          element={<Companies />}
+        />
+
+        <Route
+          path="/categories"
+          element={<Categories />}
+        />
+
+        <Route
+          path="/about"
+          element={<About />}
         />
 
         {/* Admin Login */}

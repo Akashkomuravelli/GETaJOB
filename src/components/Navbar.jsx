@@ -12,17 +12,9 @@ function Navbar() {
           Jobs
         </NavLink>
 
-        <a href="#companies">
-          Companies
-        </a>
-
-        <a href="#categories">
-          Categories
-        </a>
-
-        <a href="#about">
-          About
-        </a>
+        <Link to="/companies">Companies</Link>
+        <Link to="/categories">Categories</Link>
+        <Link to="/about">About</Link>
       </div>
     </nav>
   );

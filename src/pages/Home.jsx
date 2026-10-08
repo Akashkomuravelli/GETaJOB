@@ -10,6 +10,7 @@ import {
 } from "react-router-dom";
 
 import Navbar from "../components/Navbar";
+import ScrollReveal from "../components/ScrollReveal";
 import { supabase } from "../lib/supabase";
 
 function Home() {
@@ -131,78 +132,76 @@ function Home() {
 
         {/* HERO */}
 
-        <section className="gj-home-hero">
+<section className="gj-home-hero">
 
-          <div className="gj-home-hero-inner">
+  <ScrollReveal>
 
-            <span className="gj-home-kicker">
-              THE NEXT MOVE STARTS HERE
-            </span>
+    <div className="gj-home-hero-inner">
 
+      <span className="gj-home-kicker">
+        THE NEXT MOVE STARTS HERE
+      </span>
 
-            <h1>
-              Find work that
-              <br />
-              <em>
-                moves you forward.
-              </em>
-            </h1>
+      <h1>
+        Find work that
+        <br />
+        <em>
+          moves you forward.
+        </em>
+      </h1>
 
+      <p>
+        Real opportunities from
+        real companies. Discover
+        a role, open the original
+        listing, and make your move.
+      </p>
 
-            <p>
-              Real opportunities from
-              real companies. Discover
-              a role, open the original
-              listing, and make your move.
-            </p>
+      <form
+        className="gj-home-search"
+        onSubmit={searchJobs}
+      >
 
+        <span>
+          ⌕
+        </span>
 
-            <form
-              className="gj-home-search"
-              onSubmit={searchJobs}
-            >
+        <input
+          value={search}
+          onChange={(event) =>
+            setSearch(event.target.value)
+          }
+          placeholder="Search jobs, companies, skills..."
+        />
 
-              <span>
-                ⌕
-              </span>
+        <button>
+          Search jobs →
+        </button>
 
-              <input
-                value={search}
-                onChange={(event) =>
-                  setSearch(
-                    event.target.value
-                  )
-                }
-                placeholder="Search jobs, companies, skills..."
-              />
+      </form>
 
-              <button>
-                Search jobs →
-              </button>
+      <div className="gj-home-trust">
 
-            </form>
+        <span>
+          ✓ Direct company applications
+        </span>
 
+        <span>
+          ✓ Curated opportunities
+        </span>
 
-            <div className="gj-home-trust">
+        <span>
+          ✓ No application fees
+        </span>
 
-              <span>
-                ✓ Direct company applications
-              </span>
+      </div>
 
-              <span>
-                ✓ Curated opportunities
-              </span>
+    </div>
 
-              <span>
-                ✓ No application fees
-              </span>
+  </ScrollReveal>
 
-            </div>
-
-          </div>
-
-        </section>
-
+</section>
+        
 
         {/* LATEST JOBS */}
 
@@ -232,14 +231,18 @@ function Home() {
 
           <div className="gj-home-jobs">
 
-            {jobs.map(
-              (job) => (
+  {jobs.map(
+    (job, index) => (
 
-                <Link
-                  key={job.id}
-                  to={`/jobs/${job.id}`}
-                  className="gj-home-job"
-                >
+      <ScrollReveal
+        key={job.id}
+        delay={index * 80}
+      >
+
+        <Link
+          to={`/jobs/${job.id}`}
+          className="gj-home-job"
+        >
 
                   <div className="gj-home-logo">
                     {job.company
@@ -277,7 +280,7 @@ function Home() {
                   </b>
 
                 </Link>
-
+              </ScrollReveal>
               )
             )}
 
@@ -304,18 +307,22 @@ function Home() {
             <div className="gj-category-grid">
 
               {categories.map(
-                ([category, count]) => (
+  ([category, count], index) => (
 
-                  <button
-                    key={category}
-                    onClick={() =>
-                      navigate(
-                        `/jobs?category=${encodeURIComponent(
-                          category
-                        )}`
-                      )
-                    }
-                  >
+    <ScrollReveal
+      key={category}
+      delay={index * 70}
+    >
+
+      <button
+        onClick={() =>
+          navigate(
+            `/jobs?category=${encodeURIComponent(
+              category
+            )}`
+          )
+        }
+      >
 
                     <strong>
                       {category}
@@ -330,7 +337,7 @@ function Home() {
                     </span>
 
                   </button>
-
+                </ScrollReveal>
                 )
               )}
 
@@ -342,7 +349,7 @@ function Home() {
 
 
         {/* HOW IT WORKS */}
-
+        <ScrollReveal>
         <section className="gj-how">
 
           <div>
@@ -360,6 +367,7 @@ function Home() {
 
           <div className="gj-how-grid">
 
+            <ScrollReveal>
             <article>
 
               <b>
@@ -377,8 +385,9 @@ function Home() {
               </p>
 
             </article>
+            </ScrollReveal>
 
-
+            <ScrollReveal>
             <article>
 
               <b>
@@ -396,8 +405,9 @@ function Home() {
               </p>
 
             </article>
+            </ScrollReveal>
 
-
+            <ScrollReveal>
             <article>
 
               <b>
@@ -415,14 +425,14 @@ function Home() {
               </p>
 
             </article>
-
+            </ScrollReveal>
           </div>
 
         </section>
-
+      </ScrollReveal>
 
         {/* CTA */}
-
+        <ScrollReveal>
         <section className="gj-home-cta">
 
           <span>
@@ -440,7 +450,7 @@ function Home() {
           </Link>
 
         </section>
-
+        </ScrollReveal>
       </main>
 
     </div>

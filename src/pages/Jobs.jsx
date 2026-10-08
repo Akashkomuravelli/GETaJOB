@@ -166,44 +166,22 @@ useEffect(() => {
 
   function animateCards() {
     const cards = document.querySelectorAll(".job-card-wrapper");
-
     const viewportHeight = window.innerHeight;
 
     cards.forEach((card) => {
-      // Get the card's current position
       const rect = card.getBoundingClientRect();
 
-      // Calculate where the card is relative to viewport
       const distanceFromCenter =
         rect.top + rect.height / 2 - viewportHeight / 2;
 
-      // Convert to -1 → 1 range
       let progress =
         distanceFromCenter / (viewportHeight * 0.75);
 
       progress = Math.max(-1, Math.min(1, progress));
 
-      /*
-       * CARD MOTION
-       *
-       * Card below center:
-       *   starts lower
-       *   moves upward as user scrolls
-       *
-       * Card at center:
-       *   normal position
-       *
-       * Card above center:
-       *   moves upward
-       */
-
       const translateY = progress * 80;
-
-      const scale =
-        1 - Math.abs(progress) * 0.04;
-
-      const opacity =
-        1 - Math.abs(progress) * 0.2;
+      const scale = 1 - Math.abs(progress) * 0.04;
+      const opacity = 1 - Math.abs(progress) * 0.2;
 
       card.style.setProperty(
         "transform",
@@ -227,38 +205,29 @@ useEffect(() => {
     }
   }
 
-  // Run once
   requestAnimation();
 
-  // Run while scrolling
-  window.addEventListener(
-    "scroll",
-    requestAnimation,
-    { passive: true }
-  );
+  requestAnimationFrame(requestAnimation);
 
-  window.addEventListener(
-    "resize",
-    requestAnimation
-  );
+  window.addEventListener("scroll", requestAnimation, {
+    passive: true,
+  });
+
+  window.addEventListener("resize", requestAnimation);
+
+  const timer = setTimeout(requestAnimation, 300);
 
   return () => {
-    window.removeEventListener(
-      "scroll",
-      requestAnimation
-    );
+    window.removeEventListener("scroll", requestAnimation);
+    window.removeEventListener("resize", requestAnimation);
 
-    window.removeEventListener(
-      "resize",
-      requestAnimation
-    );
+    clearTimeout(timer);
 
     if (frame !== null) {
       cancelAnimationFrame(frame);
     }
   };
 }, [filteredJobs.length]);
-
   // =====================================================
   // CLEAR FILTERS
   // =====================================================
