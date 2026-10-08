@@ -1,190 +1,448 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
-import { jobs } from "../data/jobs";
-import JobCard from "../components/JobCard";
+import {
+  useNavigate,
+  Link,
+} from "react-router-dom";
+
+import Navbar from "../components/Navbar";
+import { supabase } from "../lib/supabase";
 
 function Home() {
-  const navigate = useNavigate();
 
-  const [search, setSearch] = useState("");
+  const navigate =
+    useNavigate();
 
-  const handleSearch = () => {
-    const value = search.trim();
+  const [jobs, setJobs] =
+    useState([]);
 
-    if (value) {
-      navigate(`/jobs?search=${encodeURIComponent(value)}`);
-    } else {
-      navigate("/jobs");
+  const [search, setSearch] =
+    useState("");
+
+
+  useEffect(() => {
+
+    async function loadJobs() {
+
+      const {
+        data,
+        error,
+      } = await supabase
+        .from("jobs")
+        .select(
+          `
+          id,
+          company,
+          role,
+          location,
+          type,
+          category,
+          experience,
+          posted_at
+          `
+        )
+        .eq(
+          "is_active",
+          true
+        )
+        .order(
+          "posted_at",
+          {
+            ascending: false,
+          }
+        )
+        .limit(6);
+
+      if (!error) {
+        setJobs(data || []);
+      }
     }
-  };
+
+    loadJobs();
+
+  }, []);
+
+
+  const categories =
+    useMemo(() => {
+
+      const counts = {};
+
+      jobs.forEach(
+        (job) => {
+
+          const category =
+            job.category ||
+            "Other";
+
+          counts[category] =
+            (counts[category] ||
+              0) + 1;
+
+        }
+      );
+
+      return Object.entries(
+        counts
+      )
+        .sort(
+          (a, b) =>
+            b[1] - a[1]
+        )
+        .slice(0, 6);
+
+    }, [jobs]);
+
+
+  function searchJobs(event) {
+
+    event.preventDefault();
+
+    const query =
+      search.trim();
+
+    if (!query) {
+
+      navigate("/jobs");
+
+      return;
+    }
+
+    navigate(
+      `/jobs?search=${encodeURIComponent(
+        query
+      )}`
+    );
+  }
+
 
   return (
-    <div className="app">
-      <nav className="navbar">
-        <Link to="/" className="logo">
-          JobNest<span>✦</span>
-        </Link>
 
-        <div className="nav-links">
-          <Link to="/jobs">Jobs</Link>
-          <a href="#">Companies</a>
-          <a href="#">Categories</a>
-          <a href="#">About</a>
-        </div>
+    <div className="gj-home">
 
-        <button
-          className="admin-btn"
-          onClick={() => navigate("/admin")}
-        >
-          Admin
-        </button>
-      </nav>
+      <Navbar />
+
 
       <main>
-        <section className="hero">
-          <div className="hero-badge">
-            ✦ Discover better opportunities
-          </div>
 
-          <h1>
-            Find your next
-            <span> opportunity.</span>
-          </h1>
+        {/* HERO */}
 
-          <p>
-            Discover curated job opportunities from companies and apply
-            directly through their official websites.
-          </p>
+        <section className="gj-home-hero">
 
-          <div className="search-box">
-            <span>⌕</span>
+          <div className="gj-home-hero-inner">
 
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  handleSearch();
+            <span className="gj-home-kicker">
+              THE NEXT MOVE STARTS HERE
+            </span>
+
+
+            <h1>
+              Find work that
+              <br />
+              <em>
+                moves you forward.
+              </em>
+            </h1>
+
+
+            <p>
+              Real opportunities from
+              real companies. Discover
+              a role, open the original
+              listing, and make your move.
+            </p>
+
+
+            <form
+              className="gj-home-search"
+              onSubmit={searchJobs}
+            >
+
+              <span>
+                ⌕
+              </span>
+
+              <input
+                value={search}
+                onChange={(event) =>
+                  setSearch(
+                    event.target.value
+                  )
                 }
-              }}
-              placeholder="Search jobs, companies, or skills..."
-            />
+                placeholder="Search jobs, companies, skills..."
+              />
 
-            <button onClick={handleSearch}>
-              Search
-            </button>
-          </div>
+              <button>
+                Search jobs →
+              </button>
 
-          {search.trim() && (
-            <div className="home-search-results">
-              {jobs
-                .filter((job) => {
-                  const value = search.toLowerCase().trim();
+            </form>
 
-                  return (
-                    job.role.toLowerCase().includes(value) ||
-                    job.company.toLowerCase().includes(value) ||
-                    job.category.toLowerCase().includes(value) ||
-                    job.skills.some((skill) =>
-                      skill.toLowerCase().includes(value)
-                    )
-                  );
-                })
-                .slice(0, 5)
-                .map((job) => (
-                  <Link
-                    key={job.id}
-                    to={`/jobs/${job.id}`}
-                    className="home-search-result"
-                  >
-                    <div className="search-result-logo">
-                      {job.logo}
-                    </div>
 
-                    <div className="search-result-info">
-                      <strong>{job.role}</strong>
-                      <span>
-                        {job.company} · {job.location}
-                      </span>
-                    </div>
+            <div className="gj-home-trust">
 
-                    <span className="search-result-arrow">
-                      →
-                    </span>
-                  </Link>
-                ))}
+              <span>
+                ✓ Direct company applications
+              </span>
+
+              <span>
+                ✓ Curated opportunities
+              </span>
+
+              <span>
+                ✓ No application fees
+              </span>
+
             </div>
-          )}
 
-          <div className="popular">
-            <span>Popular:</span>
-
-            <button
-              onClick={() =>
-                navigate("/jobs?search=Python")
-              }
-            >
-              Python
-            </button>
-
-            <button
-              onClick={() =>
-                navigate("/jobs?search=Java")
-              }
-            >
-              Java
-            </button>
-
-            <button
-              onClick={() =>
-                navigate("/jobs?search=AI")
-              }
-            >
-              AI / ML
-            </button>
-
-            <button
-              onClick={() =>
-                navigate("/jobs?search=Cybersecurity")
-              }
-            >
-              Cybersecurity
-            </button>
           </div>
+
         </section>
 
-        <section className="jobs-section">
-          <div className="sec-head">
+
+        {/* LATEST JOBS */}
+
+        <section className="gj-home-section">
+
+          <div className="gj-home-section-head">
+
             <div>
-              <p className="eyebrow">
-                EXPLORE
-              </p>
+
+              <span>
+                FRESH OPPORTUNITIES
+              </span>
 
               <h2>
-                Latest opportunities
+                Worth a look.
               </h2>
+
             </div>
 
-            <Link
-              to="/jobs"
-              className="view-all"
-            >
-              View all →
+
+            <Link to="/jobs">
+              Explore all →
             </Link>
+
           </div>
 
-          <div className="job-grid">
-            {jobs.map((job) => (
-              <JobCard
-                key={job.id}
-                job={job}
-              />
-            ))}
+
+          <div className="gj-home-jobs">
+
+            {jobs.map(
+              (job) => (
+
+                <Link
+                  key={job.id}
+                  to={`/jobs/${job.id}`}
+                  className="gj-home-job"
+                >
+
+                  <div className="gj-home-logo">
+                    {job.company
+                      ?.charAt(0)
+                      ?.toUpperCase() ||
+                      "J"}
+                  </div>
+
+
+                  <div className="gj-home-job-body">
+
+                    <span>
+                      {job.category}
+                    </span>
+
+                    <h3>
+                      {job.role}
+                    </h3>
+
+                    <p>
+                      {job.company}
+                    </p>
+
+                    <small>
+                      {job.location}
+                      {" · "}
+                      {job.type}
+                    </small>
+
+                  </div>
+
+
+                  <b>
+                    ↗
+                  </b>
+
+                </Link>
+
+              )
+            )}
+
           </div>
+
         </section>
+
+
+        {/* CATEGORIES */}
+
+        {categories.length > 0 && (
+
+          <section className="gj-home-section">
+
+            <span>
+              EXPLORE BY CATEGORY
+            </span>
+
+            <h2>
+              Find your lane.
+            </h2>
+
+
+            <div className="gj-category-grid">
+
+              {categories.map(
+                ([category, count]) => (
+
+                  <button
+                    key={category}
+                    onClick={() =>
+                      navigate(
+                        `/jobs?category=${encodeURIComponent(
+                          category
+                        )}`
+                      )
+                    }
+                  >
+
+                    <strong>
+                      {category}
+                    </strong>
+
+                    <span>
+                      {count}{" "}
+                      {count === 1
+                        ? "opening"
+                        : "openings"}{" "}
+                      →
+                    </span>
+
+                  </button>
+
+                )
+              )}
+
+            </div>
+
+          </section>
+
+        )}
+
+
+        {/* HOW IT WORKS */}
+
+        <section className="gj-how">
+
+          <div>
+
+            <span>
+              HOW IT WORKS
+            </span>
+
+            <h2>
+              Simple by design.
+            </h2>
+
+          </div>
+
+
+          <div className="gj-how-grid">
+
+            <article>
+
+              <b>
+                01
+              </b>
+
+              <h3>
+                Discover
+              </h3>
+
+              <p>
+                Search and filter
+                opportunities that match
+                what you're looking for.
+              </p>
+
+            </article>
+
+
+            <article>
+
+              <b>
+                02
+              </b>
+
+              <h3>
+                Review
+              </h3>
+
+              <p>
+                See the role, requirements,
+                company and application
+                details.
+              </p>
+
+            </article>
+
+
+            <article>
+
+              <b>
+                03
+              </b>
+
+              <h3>
+                Apply
+              </h3>
+
+              <p>
+                Continue directly to the
+                company's original
+                application page.
+              </p>
+
+            </article>
+
+          </div>
+
+        </section>
+
+
+        {/* CTA */}
+
+        <section className="gj-home-cta">
+
+          <span>
+            YOUR NEXT MOVE
+          </span>
+
+          <h2>
+            Don't wait for the
+            <br />
+            perfect moment.
+          </h2>
+
+          <Link to="/jobs">
+            Find your next opportunity →
+          </Link>
+
+        </section>
+
       </main>
+
     </div>
   );
 }

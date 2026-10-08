@@ -1,142 +1,465 @@
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { jobs } from "../data/jobs";
+
+import { supabase } from "../lib/supabase";
 
 function Analytics() {
-  return (
-    <div className="admin-layout">
-      <aside className="admin-sidebar">
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-        <Link to="/" className="admin-brand">
-          JobNest<span>✦</span>
+  useEffect(() => {
+    loadAnalytics();
+  }, []);
+
+  async function loadAnalytics() {
+    setLoading(true);
+
+    const { data, error } = await supabase
+      .from("jobs")
+      .select(
+        `
+        id,
+        company,
+        role,
+        category,
+        location,
+        is_active,
+        views,
+        apply_clicks,
+        posted_at
+        `
+      )
+      .order("apply_clicks", {
+        ascending: false,
+      });
+
+    if (error) {
+      console.error(error);
+    } else {
+      setJobs(data || []);
+    }
+
+    setLoading(false);
+  }
+
+  const stats = useMemo(() => {
+    const views = jobs.reduce(
+      (sum, job) =>
+        sum + (job.views || 0),
+      0
+    );
+
+    const applies = jobs.reduce(
+      (sum, job) =>
+        sum + (job.apply_clicks || 0),
+      0
+    );
+
+    return {
+      total: jobs.length,
+
+      active: jobs.filter(
+        (job) => job.is_active
+      ).length,
+
+      views,
+
+      applies,
+    };
+  }, [jobs]);
+
+  const mostViewed = [...jobs]
+    .sort(
+      (a, b) =>
+        (b.views || 0) -
+        (a.views || 0)
+    )
+    .slice(0, 5);
+
+  const mostApplied = [...jobs]
+    .sort(
+      (a, b) =>
+        (b.apply_clicks || 0) -
+        (a.apply_clicks || 0)
+    )
+    .slice(0, 5);
+
+  const categories = useMemo(() => {
+    const result = {};
+
+    jobs.forEach((job) => {
+      const category =
+        job.category || "Other";
+
+      if (!result[category]) {
+        result[category] = {
+          category,
+          jobs: 0,
+          views: 0,
+          applies: 0,
+        };
+      }
+
+      result[category].jobs += 1;
+
+      result[category].views +=
+        job.views || 0;
+
+      result[category].applies +=
+        job.apply_clicks || 0;
+    });
+
+    return Object.values(result).sort(
+      (a, b) =>
+        b.applies - a.applies ||
+        b.views - a.views
+    );
+  }, [jobs]);
+
+  async function logout() {
+    await supabase.auth.signOut();
+
+    window.location.href =
+      "/getajob-admin";
+  }
+
+  return (
+    <div className="gj-admin-layout">
+
+      <aside className="gj-admin-side">
+
+        <Link
+          to="/"
+          className="gj-admin-brand"
+        >
+          GETaJOB<span>✦</span>
         </Link>
 
-        <div className="admin-menu">
+        <nav>
 
-          <Link to="/admin" className="admin-menu-item">
-            <span>▦</span>
-            Dashboard
+          <Link to="/getajob-admin/dashboard">
+            ▦ Jobs
           </Link>
 
-          <Link to="/jobs" className="admin-menu-item">
-            <span>◫</span>
-            Jobs
+          <Link to="/jobs">
+            ◫ Public jobs
           </Link>
 
-          <Link to="/admin/add" className="admin-menu-item">
-            <span>＋</span>
-            Add Job
+          <Link to="/getajob-admin/add">
+            ＋ Add job
           </Link>
 
           <Link
-            to="/admin/analytics"
-            className="admin-menu-item active"
+            className="active"
+            to="/getajob-admin/analytics"
           >
-            <span>◒</span>
-            Analytics
+            ◒ Analytics
           </Link>
 
-          <Link
-            to="/admin/settings"
-            className="admin-menu-item"
-          >
-            <span>⚙</span>
-            Settings
+          <Link to="/getajob-admin/settings">
+            ⚙ Settings
           </Link>
 
-        </div>
+        </nav>
 
-        <div className="admin-sidebar-bottom">
-          <Link to="/" className="admin-view-site">
+        <div className="gj-admin-bottom">
+
+          <Link to="/">
             ← View website
           </Link>
+
+          <button onClick={logout}>
+            ↪ Logout
+          </button>
+
         </div>
 
       </aside>
 
-      <main className="admin-main">
 
-        <header className="admin-header">
+      <main className="gj-admin-main">
+
+        <header className="gj-admin-header">
+
           <div>
-            <p className="admin-eyebrow">
-              INSIGHTS
-            </p>
+
+            <span>
+              PERFORMANCE
+            </span>
 
             <h1>
               Analytics
             </h1>
 
-            <p className="admin-header-subtitle">
-              Track how your job opportunities are performing.
+            <p>
+              Understand which
+              opportunities attract
+              attention and applications.
             </p>
+
           </div>
+
         </header>
 
-        <section className="admin-stats">
 
-          <div className="admin-stat-card">
-            <div className="admin-stat-icon">
-              ◫
-            </div>
+        {loading ? (
 
-            <div>
-              <p>Total Jobs</p>
-              <h2>{jobs.length}</h2>
-              <span>Published opportunities</span>
-            </div>
+          <div className="gj-admin-empty">
+            Loading analytics...
           </div>
 
-          <div className="admin-stat-card">
-            <div className="admin-stat-icon">
-              👁
-            </div>
+        ) : (
 
-            <div>
-              <p>Total Views</p>
-              <h2>0</h2>
-              <span>Job page views</span>
-            </div>
-          </div>
+          <>
 
-          <div className="admin-stat-card">
-            <div className="admin-stat-icon">
-              ↗
-            </div>
+            {/* STATS */}
+            <section className="gj-admin-stat-grid">
 
-            <div>
-              <p>Apply Clicks</p>
-              <h2>0</h2>
-              <span>Application redirects</span>
-            </div>
-          </div>
+              <div>
+                <span>
+                  Total jobs
+                </span>
 
-        </section>
+                <strong>
+                  {stats.total}
+                </strong>
+              </div>
 
-        <section className="admin-panel">
+              <div>
+                <span>
+                  Active jobs
+                </span>
 
-          <div className="admin-panel-header">
-            <div>
-              <p className="admin-eyebrow">
-                PERFORMANCE
-              </p>
+                <strong>
+                  {stats.active}
+                </strong>
+              </div>
 
-              <h2>
-                Platform activity
-              </h2>
-            </div>
-          </div>
+              <div>
+                <span>
+                  Job views
+                </span>
 
-          <div
-            style={{
-              padding: "60px 25px",
-              textAlign: "center",
-              color: "#777c8d",
-            }}
-          >
-            Analytics tracking will appear here once
-            we connect the platform to the database.
-          </div>
+                <strong>
+                  {stats.views}
+                </strong>
+              </div>
 
-        </section>
+              <div>
+                <span>
+                  Apply clicks
+                </span>
+
+                <strong>
+                  {stats.applies}
+                </strong>
+              </div>
+
+            </section>
+
+
+            {/* RANKINGS */}
+            <section className="gj-analytics-grid">
+
+              <div className="gj-admin-card">
+
+                <div className="gj-card-heading">
+                  <h2>
+                    Most viewed
+                  </h2>
+
+                  <span>
+                    Views
+                  </span>
+                </div>
+
+                {mostViewed.map(
+                  (job, index) => (
+
+                    <div
+                      className="gj-ranking-row"
+                      key={job.id}
+                    >
+
+                      <b>
+                        0{index + 1}
+                      </b>
+
+                      <div>
+                        <strong>
+                          {job.role}
+                        </strong>
+
+                        <small>
+                          {job.company}
+                        </small>
+                      </div>
+
+                      <em>
+                        {job.views || 0}
+                      </em>
+
+                    </div>
+
+                  )
+                )}
+
+              </div>
+
+
+              <div className="gj-admin-card">
+
+                <div className="gj-card-heading">
+
+                  <h2>
+                    Most applied
+                  </h2>
+
+                  <span>
+                    Apply clicks
+                  </span>
+
+                </div>
+
+                {mostApplied.map(
+                  (job, index) => (
+
+                    <div
+                      className="gj-ranking-row"
+                      key={job.id}
+                    >
+
+                      <b>
+                        0{index + 1}
+                      </b>
+
+                      <div>
+                        <strong>
+                          {job.role}
+                        </strong>
+
+                        <small>
+                          {job.company}
+                        </small>
+                      </div>
+
+                      <em>
+                        {job.apply_clicks ||
+                          0}
+                      </em>
+
+                    </div>
+
+                  )
+                )}
+
+              </div>
+
+            </section>
+
+
+            {/* CATEGORY */}
+            <section className="gj-admin-card">
+
+              <div className="gj-card-heading">
+
+                <h2>
+                  Category performance
+                </h2>
+
+                <span>
+                  All jobs
+                </span>
+
+              </div>
+
+              <div className="gj-table-wrap">
+
+                <table className="gj-admin-table">
+
+                  <thead>
+
+                    <tr>
+                      <th>
+                        Category
+                      </th>
+
+                      <th>
+                        Jobs
+                      </th>
+
+                      <th>
+                        Views
+                      </th>
+
+                      <th>
+                        Apply clicks
+                      </th>
+
+                      <th>
+                        Conversion
+                      </th>
+                    </tr>
+
+                  </thead>
+
+                  <tbody>
+
+                    {categories.map(
+                      (item) => {
+
+                        const conversion =
+                          item.views > 0
+                            ? Math.round(
+                                (item.applies /
+                                  item.views) *
+                                  100
+                              )
+                            : 0;
+
+                        return (
+                          <tr
+                            key={
+                              item.category
+                            }
+                          >
+
+                            <td>
+                              {item.category}
+                            </td>
+
+                            <td>
+                              {item.jobs}
+                            </td>
+
+                            <td>
+                              {item.views}
+                            </td>
+
+                            <td>
+                              {item.applies}
+                            </td>
+
+                            <td>
+                              {conversion}%
+                            </td>
+
+                          </tr>
+                        );
+                      }
+                    )}
+
+                  </tbody>
+
+                </table>
+
+              </div>
+
+            </section>
+
+          </>
+
+        )}
 
       </main>
     </div>

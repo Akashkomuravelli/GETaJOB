@@ -1,34 +1,50 @@
 import { Link } from "react-router-dom";
+import { supabase } from "../lib/supabase";
 
 function Settings() {
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    window.location.href = "/getajob-admin";
+  }
+
   return (
     <div className="admin-layout">
 
       <aside className="admin-sidebar">
 
         <Link to="/" className="admin-brand">
-          JobNest<span>✦</span>
+          GETaJOB<span>✦</span>
         </Link>
 
         <div className="admin-menu">
 
-          <Link to="/admin" className="admin-menu-item">
+          <Link
+            to="/getajob-admin/dashboard"
+            className="admin-menu-item"
+          >
             <span>▦</span>
-            Dashboard
+            Jobs Management
           </Link>
 
-          <Link to="/jobs" className="admin-menu-item">
+          <Link
+            to="/jobs"
+            className="admin-menu-item"
+          >
             <span>◫</span>
-            Jobs
+            Public Jobs
           </Link>
 
-          <Link to="/admin/add" className="admin-menu-item">
+          <Link
+            to="/getajob-admin/add"
+            className="admin-menu-item"
+          >
             <span>＋</span>
             Add Job
           </Link>
 
           <Link
-            to="/admin/analytics"
+            to="/getajob-admin/analytics"
             className="admin-menu-item"
           >
             <span>◒</span>
@@ -36,7 +52,7 @@ function Settings() {
           </Link>
 
           <Link
-            to="/admin/settings"
+            to="/getajob-admin/settings"
             className="admin-menu-item active"
           >
             <span>⚙</span>
@@ -46,9 +62,22 @@ function Settings() {
         </div>
 
         <div className="admin-sidebar-bottom">
-          <Link to="/" className="admin-view-site">
+
+          <Link
+            to="/"
+            className="admin-view-site"
+          >
             ← View website
           </Link>
+
+          <button
+            type="button"
+            className="admin-view-site"
+            onClick={handleLogout}
+          >
+            ↪ Logout
+          </button>
+
         </div>
 
       </aside>
@@ -58,6 +87,7 @@ function Settings() {
         <header className="admin-header">
 
           <div>
+
             <p className="admin-eyebrow">
               CONFIGURATION
             </p>
@@ -67,8 +97,9 @@ function Settings() {
             </h1>
 
             <p className="admin-header-subtitle">
-              Manage your JobNest platform settings.
+              Manage your GETaJOB platform settings.
             </p>
+
           </div>
 
         </header>
@@ -76,7 +107,9 @@ function Settings() {
         <section className="admin-panel">
 
           <div className="admin-panel-header">
+
             <div>
+
               <p className="admin-eyebrow">
                 PLATFORM
               </p>
@@ -84,7 +117,9 @@ function Settings() {
               <h2>
                 General Settings
               </h2>
+
             </div>
+
           </div>
 
           <div
@@ -92,23 +127,29 @@ function Settings() {
               padding: "25px",
               display: "flex",
               flexDirection: "column",
-              gap: "20px",
+              gap: "25px",
             }}
           >
 
             <div>
-              <p style={{ color: "#858998", fontSize: "12px" }}>
+
+              <p
+                style={{
+                  color: "#858998",
+                  fontSize: "12px",
+                  marginBottom: "7px",
+                }}
+              >
                 Platform name
               </p>
 
               <input
-                value="JobNest"
+                value="GETaJOB"
                 readOnly
                 style={{
                   width: "100%",
                   maxWidth: "500px",
                   padding: "13px",
-                  marginTop: "7px",
                   boxSizing: "border-box",
                   border: "1px solid #2a2d38",
                   borderRadius: "10px",
@@ -116,10 +157,18 @@ function Settings() {
                   color: "white",
                 }}
               />
+
             </div>
 
             <div>
-              <p style={{ color: "#858998", fontSize: "12px" }}>
+
+              <p
+                style={{
+                  color: "#858998",
+                  fontSize: "12px",
+                  marginBottom: "7px",
+                }}
+              >
                 Platform description
               </p>
 
@@ -131,7 +180,6 @@ function Settings() {
                   width: "100%",
                   maxWidth: "600px",
                   padding: "13px",
-                  marginTop: "7px",
                   boxSizing: "border-box",
                   border: "1px solid #2a2d38",
                   borderRadius: "10px",
@@ -140,6 +188,30 @@ function Settings() {
                   resize: "vertical",
                 }}
               />
+
+            </div>
+
+            <div>
+
+              <p
+                style={{
+                  color: "#858998",
+                  fontSize: "12px",
+                  marginBottom: "7px",
+                }}
+              >
+                Admin access
+              </p>
+
+              <p
+                style={{
+                  color: "#57d99b",
+                  margin: 0,
+                }}
+              >
+                ● Protected by Supabase Authentication
+              </p>
+
             </div>
 
           </div>

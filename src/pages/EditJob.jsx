@@ -1,9 +1,14 @@
-import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 
-function AddJob() {
+function EditJob() {
+  const { id } = useParams();
   const navigate = useNavigate();
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   const [form, setForm] = useState({
     company: "",
@@ -17,27 +22,63 @@ function AddJob() {
     applyUrl: "",
   });
 
-  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    fetchJob();
+  }, [id]);
 
-  const handleChange = (e) => {
+  async function fetchJob() {
+    setLoading(true);
+    setError("");
+
+    const { data, error } = await supabase
+      .from("jobs")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (error) {
+      console.error(error);
+      setError(error.message);
+      setLoading(false);
+      return;
+    }
+
+    setForm({
+      company: data.company || "",
+      role: data.role || "",
+      location: data.location || "",
+      type: data.type || "Full-time",
+      category: data.category || "Technology",
+      experience: data.experience || "Fresher",
+      description: data.description || "",
+      skills: (data.skills || []).join(", "),
+      applyUrl: data.apply_url || "",
+    });
+
+    setLoading(false);
+  }
+
+  function handleChange(e) {
     setForm({
       ...form,
       [e.target.name]: e.target.value,
     });
-  };
+  }
 
-  const handleSubmit = async (e) => {
+  async function handleSubmit(e) {
     e.preventDefault();
 
-    setLoading(true);
+    setSaving(true);
+    setError("");
 
     const skillsArray = form.skills
       .split(",")
       .map((skill) => skill.trim())
       .filter(Boolean);
 
-    const { error } = await supabase.from("jobs").insert([
-      {
+    const { error } = await supabase
+      .from("jobs")
+      .update({
         company: form.company,
         role: form.role,
         location: form.location,
@@ -47,50 +88,105 @@ function AddJob() {
         description: form.description,
         skills: skillsArray,
         apply_url: form.applyUrl,
-      },
-    ]);
+      })
+      .eq("id", id);
 
-    setLoading(false);
+    setSaving(false);
 
     if (error) {
       console.error(error);
-      alert("Failed to publish job: " + error.message);
+      setError(error.message);
       return;
     }
 
-    alert("Job published successfully! 🎉");
+    alert("Job updated successfully! 🎉");
 
-    navigate("/jobs");
-  };
+    navigate("/admin");
+  }
+
+  if (loading) {
+    return (
+      <div className="admin-layout">
+        <aside className="admin-sidebar">
+          <Link to="/" className="admin-brand">
+            GETaJOB<span>✦</span>
+          </Link>
+        </aside>
+
+        <main className="admin-main">
+          <div className="admin-empty-state">
+            Loading job...
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (error && !form.company) {
+    return (
+      <div className="admin-layout">
+        <aside className="admin-sidebar">
+          <Link to="/" className="admin-brand">
+            GETaJOB<span>✦</span>
+          </Link>
+        </aside>
+
+        <main className="admin-main">
+          <div className="admin-empty-state">
+            <h3>Unable to load job</h3>
+            <p>{error}</p>
+
+            <Link
+              to="/admin"
+              className="admin-add-btn"
+            >
+              ← Back to Jobs
+            </Link>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="admin-layout">
+
+      {/* SIDEBAR */}
+
       <aside className="admin-sidebar">
+
         <Link to="/" className="admin-brand">
           GETaJOB<span>✦</span>
         </Link>
 
         <div className="admin-menu">
-          <Link to="/admin" className="admin-menu-item">
-            <span>▦</span>
-            Dashboard
-          </Link>
 
-          <Link to="/jobs" className="admin-menu-item">
-            <span>◫</span>
-            Jobs
+          <Link
+            to="/admin"
+            className="admin-menu-item"
+          >
+            <span>▦</span>
+            Jobs Management
           </Link>
 
           <Link
-            to="/getajob-admin/add"
-            className="admin-menu-item active"
+            to="/jobs"
+            className="admin-menu-item"
+          >
+            <span>◫</span>
+            Public Jobs
+          </Link>
+
+          <Link
+            to="/admin/add"
+            className="admin-menu-item"
           >
             <span>＋</span>
             Add Job
           </Link>
 
           <Link
-            to="/getajob-admin/analytics"
+            to="/admin/analytics"
             className="admin-menu-item"
           >
             <span>◒</span>
@@ -98,39 +194,64 @@ function AddJob() {
           </Link>
 
           <Link
-            to="/getajob-admin/settings"
+            to="/admin/settings"
             className="admin-menu-item"
           >
             <span>⚙</span>
             Settings
           </Link>
+
         </div>
 
         <div className="admin-sidebar-bottom">
-          <Link to="/" className="admin-view-site">
+          <Link
+            to="/"
+            className="admin-view-site"
+          >
             ← View website
           </Link>
         </div>
+
       </aside>
 
+      {/* MAIN */}
+
       <main className="admin-main">
+
         <header className="admin-header">
+
           <div>
-            <p className="admin-eyebrow">MANAGEMENT</p>
-            <h1>Add New Job</h1>
+            <p className="admin-eyebrow">
+              MANAGEMENT
+            </p>
+
+            <h1>Edit Job</h1>
+
             <p className="admin-header-subtitle">
-              Publish a new opportunity to GETaJOB.
+              Update this job opportunity.
             </p>
           </div>
+
         </header>
 
         <section className="admin-panel add-job-panel">
-          <form onSubmit={handleSubmit} className="job-form">
+
+          {error && (
+            <div className="form-error">
+              {error}
+            </div>
+          )}
+
+          <form
+            onSubmit={handleSubmit}
+            className="job-form"
+          >
 
             <div className="form-grid">
 
               <div className="form-group">
                 <label>Company Name</label>
+
                 <input
                   name="company"
                   value={form.company}
@@ -142,6 +263,7 @@ function AddJob() {
 
               <div className="form-group">
                 <label>Job Title</label>
+
                 <input
                   name="role"
                   value={form.role}
@@ -153,6 +275,7 @@ function AddJob() {
 
               <div className="form-group">
                 <label>Location</label>
+
                 <input
                   name="location"
                   value={form.location}
@@ -164,6 +287,7 @@ function AddJob() {
 
               <div className="form-group">
                 <label>Job Type</label>
+
                 <select
                   name="type"
                   value={form.type}
@@ -179,6 +303,7 @@ function AddJob() {
 
               <div className="form-group">
                 <label>Category</label>
+
                 <select
                   name="category"
                   value={form.category}
@@ -197,6 +322,7 @@ function AddJob() {
 
               <div className="form-group">
                 <label>Experience</label>
+
                 <select
                   name="experience"
                   value={form.experience}
@@ -214,11 +340,11 @@ function AddJob() {
 
             <div className="form-group">
               <label>Job Description</label>
+
               <textarea
                 name="description"
                 value={form.description}
                 onChange={handleChange}
-                placeholder="Describe the job opportunity..."
                 rows="6"
                 required
               />
@@ -226,13 +352,15 @@ function AddJob() {
 
             <div className="form-group">
               <label>Required Skills</label>
+
               <input
                 name="skills"
                 value={form.skills}
                 onChange={handleChange}
-                placeholder="Python, SQL, FastAPI, Git"
+                placeholder="Python, SQL, Git"
                 required
               />
+
               <small>
                 Separate skills with commas.
               </small>
@@ -240,6 +368,7 @@ function AddJob() {
 
             <div className="form-group">
               <label>Application URL</label>
+
               <input
                 type="url"
                 name="applyUrl"
@@ -251,6 +380,7 @@ function AddJob() {
             </div>
 
             <div className="form-actions">
+
               <Link
                 to="/admin"
                 className="cancel-btn"
@@ -261,17 +391,22 @@ function AddJob() {
               <button
                 type="submit"
                 className="admin-add-btn"
-                disabled={loading}
+                disabled={saving}
               >
-                {loading ? "Publishing..." : "＋ Publish Job"}
+                {saving
+                  ? "Saving..."
+                  : "✓ Save Changes"}
               </button>
+
             </div>
 
           </form>
+
         </section>
+
       </main>
     </div>
   );
 }
 
-export default AddJob;
+export default EditJob;

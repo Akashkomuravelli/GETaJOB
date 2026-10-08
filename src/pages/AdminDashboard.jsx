@@ -1,290 +1,604 @@
-import { Link } from "react-router-dom";
-import { jobs } from "../data/jobs";
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
+import {
+  Link,
+} from "react-router-dom";
+
+import {
+  supabase,
+} from "../lib/supabase";
 
 function AdminDashboard() {
-  const totalJobs = jobs.length;
-  const activeJobs = jobs.length;
-  const applyClicks = 0;
+
+  const [jobs, setJobs] =
+    useState([]);
+
+  const [search, setSearch] =
+    useState("");
+
+  const [status, setStatus] =
+    useState("all");
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [busyId, setBusyId] =
+    useState(null);
+
+
+  useEffect(() => {
+    loadJobs();
+  }, []);
+
+
+  async function loadJobs() {
+
+    setLoading(true);
+
+    const {
+      data,
+      error,
+    } = await supabase
+      .from("jobs")
+      .select("*")
+      .order(
+        "posted_at",
+        {
+          ascending: false,
+        }
+      );
+
+    if (error) {
+      console.error(error);
+    }
+
+    setJobs(data || []);
+
+    setLoading(false);
+  }
+
+
+  async function toggleActive(job) {
+
+    setBusyId(job.id);
+
+    const {
+      error,
+    } = await supabase
+      .from("jobs")
+      .update({
+        is_active:
+          !job.is_active,
+      })
+      .eq("id", job.id);
+
+    if (error) {
+
+      alert(
+        "Could not update job."
+      );
+
+    } else {
+
+      setJobs((current) =>
+        current.map((item) =>
+          item.id === job.id
+            ? {
+                ...item,
+                is_active:
+                  !item.is_active,
+              }
+            : item
+        )
+      );
+
+    }
+
+    setBusyId(null);
+  }
+
+
+  async function deleteJob(job) {
+
+    const confirmed =
+      window.confirm(
+        `Delete "${job.role}" at ${job.company}? This cannot be undone.`
+      );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setBusyId(job.id);
+
+    const {
+      error,
+    } = await supabase
+      .from("jobs")
+      .delete()
+      .eq("id", job.id);
+
+    if (error) {
+
+      alert(
+        "Could not delete this job."
+      );
+
+    } else {
+
+      setJobs((current) =>
+        current.filter(
+          (item) =>
+            item.id !== job.id
+        )
+      );
+
+    }
+
+    setBusyId(null);
+  }
+
+
+  async function logout() {
+
+    await supabase.auth.signOut();
+
+    window.location.href =
+      "/getajob-admin";
+  }
+
+
+  const filteredJobs =
+    useMemo(() => {
+
+      const query =
+        search
+          .trim()
+          .toLowerCase();
+
+      return jobs.filter(
+        (job) => {
+
+          const searchable =
+            [
+              job.company,
+              job.role,
+              job.location,
+              job.category,
+              job.experience,
+            ]
+              .join(" ")
+              .toLowerCase();
+
+          const matchesSearch =
+            !query ||
+            searchable.includes(
+              query
+            );
+
+          const matchesStatus =
+            status === "all" ||
+            (
+              status ===
+                "active" &&
+              job.is_active
+            ) ||
+            (
+              status ===
+                "inactive" &&
+              !job.is_active
+            );
+
+          return (
+            matchesSearch &&
+            matchesStatus
+          );
+        }
+      );
+
+    }, [
+      jobs,
+      search,
+      status,
+    ]);
+
+
+  const activeJobs =
+    jobs.filter(
+      (job) =>
+        job.is_active
+    ).length;
+
+
+  const totalViews =
+    jobs.reduce(
+      (sum, job) =>
+        sum +
+        (job.views || 0),
+      0
+    );
+
+
+  const totalApplies =
+    jobs.reduce(
+      (sum, job) =>
+        sum +
+        (job.apply_clicks || 0),
+      0
+    );
+
 
   return (
-    <div className="admin-layout">
 
-      {/* Sidebar */}
-      <aside className="admin-sidebar">
+    <div className="gj-admin-layout">
 
-        <Link to="/" className="admin-brand">
-          JobNest<span>✦</span>
+      {/* SIDEBAR */}
+
+      <aside className="gj-admin-side">
+
+        <Link
+          to="/"
+          className="gj-admin-brand"
+        >
+          GETaJOB
+          <span>✦</span>
         </Link>
 
-        <div className="admin-menu">
+
+        <nav>
 
           <Link
-            to="/admin"
-            className="admin-menu-item active"
+            className="active"
+            to="/getajob-admin/dashboard"
           >
-            <span>▦</span>
-            Dashboard
+            ▦ Jobs
           </Link>
 
-          <Link
-            to="/jobs"
-            className="admin-menu-item"
-          >
-            <span>◫</span>
-            Jobs
+          <Link to="/jobs">
+            ◫ Public jobs
           </Link>
 
-          <Link
-            to="/admin/add"
-            className="admin-menu-item"
-          >
-            <span>＋</span>
-            Add Job
+          <Link to="/getajob-admin/add">
+            ＋ Add job
           </Link>
 
-          <Link
-            to="/admin/analytics"
-            className="admin-menu-item"
-            >
-            <span>◒</span>
-                Analytics
-            </Link>
+          <Link to="/getajob-admin/analytics">
+            ◒ Analytics
+          </Link>
 
-          <Link
-            to="/admin/settings"
-            className="admin-menu-item"
-            >
-            <span>⚙</span>
-                Settings
-            </Link>
+          <Link to="/getajob-admin/settings">
+            ⚙ Settings
+          </Link>
 
-        </div>
+        </nav>
 
-        <div className="admin-sidebar-bottom">
 
-          <Link
-            to="/"
-            className="admin-view-site"
-          >
+        <div className="gj-admin-bottom">
+
+          <Link to="/">
             ← View website
           </Link>
+
+          <button
+            onClick={logout}
+          >
+            ↪ Logout
+          </button>
 
         </div>
 
       </aside>
 
 
-      {/* Main */}
-      <main className="admin-main">
+      {/* MAIN */}
 
-        {/* Header */}
-        <header className="admin-header">
+      <main className="gj-admin-main">
+
+        <header className="gj-admin-header">
 
           <div>
-            <p className="admin-eyebrow">
-              OVERVIEW
-            </p>
+
+            <span>
+              MANAGEMENT
+            </span>
 
             <h1>
-              Dashboard
+              Jobs
             </h1>
 
-            <p className="admin-header-subtitle">
-              Manage your job opportunities and platform activity.
+            <p>
+              Manage every opportunity
+              published on GETaJOB.
             </p>
+
           </div>
 
+
           <Link
-            to="/admin/add"
-            className="admin-add-btn"
+            className="gj-admin-primary"
+            to="/getajob-admin/add"
           >
-            ＋ Add New Job
+            ＋ Add new job
           </Link>
 
         </header>
 
 
-        {/* Statistics */}
-        <section className="admin-stats">
+        {/* STATS */}
 
-          <div className="admin-stat-card">
+        <section className="gj-admin-stat-grid">
 
-            <div className="admin-stat-icon">
-              ◫
-            </div>
+          <div>
+            <span>
+              Total jobs
+            </span>
 
-            <div>
-              <p>Total Jobs</p>
-
-              <h2>
-                {totalJobs}
-              </h2>
-
-              <span>
-                All published opportunities
-              </span>
-            </div>
-
+            <strong>
+              {jobs.length}
+            </strong>
           </div>
 
 
-          <div className="admin-stat-card">
+          <div>
+            <span>
+              Active
+            </span>
 
-            <div className="admin-stat-icon">
-              ●
-            </div>
-
-            <div>
-              <p>Active Jobs</p>
-
-              <h2>
-                {activeJobs}
-              </h2>
-
-              <span>
-                Currently visible
-              </span>
-            </div>
-
+            <strong>
+              {activeJobs}
+            </strong>
           </div>
 
 
-          <div className="admin-stat-card">
+          <div>
+            <span>
+              Total views
+            </span>
 
-            <div className="admin-stat-icon">
-              ↗
-            </div>
+            <strong>
+              {totalViews}
+            </strong>
+          </div>
 
-            <div>
-              <p>Apply Clicks</p>
 
-              <h2>
-                {applyClicks}
-              </h2>
+          <div>
+            <span>
+              Apply clicks
+            </span>
 
-              <span>
-                Total application clicks
-              </span>
-            </div>
-
+            <strong>
+              {totalApplies}
+            </strong>
           </div>
 
         </section>
 
 
-        {/* Recent Jobs */}
-        <section className="admin-panel">
+        {/* SEARCH */}
 
-          <div className="admin-panel-header">
+        <section className="gj-admin-toolbar">
 
-            <div>
-              <p className="admin-eyebrow">
-                MANAGEMENT
-              </p>
+          <input
+            value={search}
+            onChange={(event) =>
+              setSearch(
+                event.target.value
+              )
+            }
+            placeholder="Search company, role, location..."
+          />
 
-              <h2>
-                Recent Jobs
-              </h2>
+
+          <select
+            value={status}
+            onChange={(event) =>
+              setStatus(
+                event.target.value
+              )
+            }
+          >
+
+            <option value="all">
+              All jobs
+            </option>
+
+            <option value="active">
+              Active only
+            </option>
+
+            <option value="inactive">
+              Inactive only
+            </option>
+
+          </select>
+
+        </section>
+
+
+        {/* TABLE */}
+
+        <section className="gj-admin-card">
+
+          {loading ? (
+
+            <div className="gj-admin-empty">
+              Loading jobs...
             </div>
 
-            <Link
-              to="/jobs"
-              className="admin-view-all"
-            >
-              View public jobs →
-            </Link>
+          ) : filteredJobs.length === 0 ? (
 
-          </div>
+            <div className="gj-admin-empty">
 
+              <h3>
+                No jobs found
+              </h3>
 
-          <div className="admin-table-wrapper">
+              <p>
+                Try another search or
+                add a new opportunity.
+              </p>
 
-            <table className="admin-table">
+            </div>
 
-              <thead>
-                <tr>
-                  <th>Company</th>
-                  <th>Position</th>
-                  <th>Location</th>
-                  <th>Category</th>
-                  <th>Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
+          ) : (
 
-              <tbody>
+            <div className="gj-table-wrap">
 
-                {jobs.map((job) => (
+              <table className="gj-admin-table">
 
-                  <tr key={job.id}>
+                <thead>
 
-                    <td>
+                  <tr>
 
-                      <div className="admin-company">
+                    <th>
+                      Opportunity
+                    </th>
 
-                        <div className="admin-company-logo">
-                          {job.logo}
-                        </div>
+                    <th>
+                      Location
+                    </th>
 
-                        <strong>
-                          {job.company}
-                        </strong>
+                    <th>
+                      Status
+                    </th>
 
-                      </div>
+                    <th>
+                      Views
+                    </th>
 
-                    </td>
+                    <th>
+                      Apply
+                    </th>
 
-
-                    <td>
-                      <span className="admin-position">
-                        {job.role}
-                      </span>
-                    </td>
-
-
-                    <td>
-                      {job.location}
-                    </td>
-
-
-                    <td>
-
-                      <span className="admin-category">
-                        {job.category}
-                      </span>
-
-                    </td>
-
-
-                    <td>
-
-                      <span className="admin-status">
-                        ● Active
-                      </span>
-
-                    </td>
-
-
-                    <td>
-
-                      <Link
-                        to={`/jobs/${job.id}`}
-                        className="admin-action"
-                      >
-                        View
-                      </Link>
-
-                    </td>
+                    <th>
+                      Actions
+                    </th>
 
                   </tr>
 
-                ))}
+                </thead>
 
-              </tbody>
 
-            </table>
+                <tbody>
 
-          </div>
+                  {filteredJobs.map(
+                    (job) => (
+
+                      <tr key={job.id}>
+
+                        <td>
+
+                          <strong>
+                            {job.role}
+                          </strong>
+
+                          <small>
+                            {job.company}
+                            {" · "}
+                            {job.category}
+                          </small>
+
+                        </td>
+
+
+                        <td>
+                          {job.location}
+                        </td>
+
+
+                        <td>
+
+                          <span
+                            className={
+                              `gj-status ${
+                                job.is_active
+                                  ? "on"
+                                  : "off"
+                              }`
+                            }
+                          >
+                            {job.is_active
+                              ? "Active"
+                              : "Inactive"}
+                          </span>
+
+                        </td>
+
+
+                        <td>
+                          {job.views || 0}
+                        </td>
+
+
+                        <td>
+                          {job.apply_clicks ||
+                            0}
+                        </td>
+
+
+                        <td>
+
+                          <div className="gj-actions">
+
+                            <Link
+                              to={`/getajob-admin/edit/${job.id}`}
+                            >
+                              Edit
+                            </Link>
+
+
+                            <button
+                              disabled={
+                                busyId ===
+                                job.id
+                              }
+                              onClick={() =>
+                                toggleActive(
+                                  job
+                                )
+                              }
+                            >
+                              {job.is_active
+                                ? "Deactivate"
+                                : "Activate"}
+                            </button>
+
+
+                            <button
+                              className="danger"
+                              disabled={
+                                busyId ===
+                                job.id
+                              }
+                              onClick={() =>
+                                deleteJob(
+                                  job
+                                )
+                              }
+                            >
+                              Delete
+                            </button>
+
+                          </div>
+
+                        </td>
+
+                      </tr>
+
+                    )
+                  )}
+
+                </tbody>
+
+              </table>
+
+            </div>
+
+          )}
 
         </section>
 
