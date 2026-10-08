@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import ScrollReveal from "../components/ScrollReveal";
+import Navbar from "../components/Navbar";
 
 function Companies() {
   const [jobs, setJobs] = useState([]);
@@ -39,6 +40,10 @@ function Companies() {
 
   return (
     <div className="gj-page">
+
+      {/* Navbar */}
+      <Navbar />
+
       <section className="gj-page-hero">
         <ScrollReveal>
           <span>COMPANIES</span>
@@ -90,7 +95,9 @@ function Companies() {
 
                     <p>
                       {company.jobs.length}{" "}
-                      {company.jobs.length === 1 ? "open role" : "open roles"}
+                      {company.jobs.length === 1
+                        ? "open role"
+                        : "open roles"}
                     </p>
 
                     <small>

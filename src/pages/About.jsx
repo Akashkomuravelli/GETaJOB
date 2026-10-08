@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
 import ScrollReveal from "../components/ScrollReveal";
-
+import Navbar from "../components/Navbar";
 function About() {
   return (
     <div className="gj-page">
+        <Navbar />s
       <section className="gj-page-hero">
         <ScrollReveal>
           <span>ABOUT GETaJOB</span>

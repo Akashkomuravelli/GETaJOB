@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import ScrollReveal from "../components/ScrollReveal";
-
+import Navbar from "../components/Navbar";
 function Categories() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,7 +38,9 @@ function Categories() {
   );
 
   return (
+
     <div className="gj-page">
+        <Navbar />
       <section className="gj-page-hero">
         <ScrollReveal>
           <span>CATEGORIES</span>
