@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from "react";
 
 function ScrollReveal({
@@ -11,19 +12,15 @@ function ScrollReveal({
 
   useEffect(() => {
     const element = ref.current;
-
     if (!element) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
-          setVisible(true);
-          observer.unobserve(element);
-        }
+        setVisible(entry.isIntersecting);
       },
       {
         threshold: 0.12,
-        rootMargin: "0px 0px -60px 0px",
+        rootMargin: "0px 0px -40px 0px",
       }
     );
 
